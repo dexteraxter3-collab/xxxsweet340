@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel – MediaVault</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <a href="index.html" class="logo">
+      <div class="logo-icon">🎞️</div>
+      <span class="logo-text">MediaVault</span>
+    </a>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:12px;">
+      <span style="font-size:13px;color:var(--muted);">🔧 Admin Mode</span>
+      <a href="index.html" style="font-size:13px;color:var(--accent);">← Back to Site</a>
+    </div>
+  </div>
+</header>
+
+<!-- Admin login gate -->
+<div id="loginGate" style="display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 64px);">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:40px;width:360px;text-align:center;">
+    <div style="font-size:48px;margin-bottom:16px;">🔐</div>
+    <h2 style="font-family:'Playfair Display',serif;font-size:24px;margin-bottom:8px;">Admin Login</h2>
+    <p style="color:var(--muted);font-size:14px;margin-bottom:24px;">Enter the admin password to continue.</p>
+    <input type="password" id="pwInput" class="form-control" placeholder="Password (hint: admin123)"
+      style="margin-bottom:12px;text-align:center;" onkeydown="if(event.key==='Enter')doLogin()" />
+    <button onclick="doLogin()" style="width:100%;padding:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));
+      border:none;border-radius:8px;color:#000;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;cursor:pointer;">
+      Login
+    </button>
+    <p id="loginErr" style="color:var(--danger);font-size:13px;margin-top:10px;display:none;">Incorrect password. Try "admin123"</p>
+  </div>
+</div>
+
+<!-- Admin panel (hidden until login) -->
+<div id="adminPanel" style="display:none;">
+<div class="admin-layout">
+
+  <!-- Sidebar -->
+  <aside class="admin-sidebar">
+    <div class="admin-sidebar-title">Admin Panel</div>
+    <button class="admin-nav-item active" onclick="switchTab('dashboard', this)">
+      <span class="nav-icon">📊</span> Dashboard
+    </button>
+    <button class="admin-nav-item" onclick="switchTab('allMedia', this)">
+      <span class="nav-icon">🗂️</span> All Media
+    </button>
+    <button class="admin-nav-item" onclick="switchTab('pending', this)">
+      <span class="nav-icon">⏳</span> Pending Review
+    </button>
+    <button class="admin-nav-item" onclick="switchTab('addMedia', this)">
+      <span class="nav-icon">➕</span> Add Media
+    </button>
+    <div style="border-top:1px solid var(--border);margin:12px 0;"></div>
+    <button class="admin-nav-item" onclick="doLogout()">
+      <span class="nav-icon">🚪</span> Logout
+    </button>
+  </aside>
+
+  <!-- Content -->
+  <div class="admin-content">
+
+    <!-- DASHBOARD -->
+    <div id="tab-dashboard">
+      <h2 style="font-family:'Playfair Display',serif;font-size:26px;margin-bottom:24px;">Dashboard</h2>
+
+      <div class="admin-stats" id="statsGrid">
+        <!-- rendered by JS -->
+      </div>
+
+      <div class="admin-table-wrap">
+        <div class="admin-table-header">
+          <h3>Recent Uploads</h3>
+          <button onclick="switchTab('allMedia', document.querySelector('[onclick*=allMedia]'))"
+            style="font-size:13px;color:var(--accent);background:none;border:none;cursor:pointer;">View All →</button>
+        </div>
+        <div style="overflow-x:auto;">
+          <table id="recentTable">
+            <thead><tr><th>Thumb</th><th>Title</th><th>Type</th><th>Category</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+            <tbody id="recentTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ALL MEDIA -->
+    <div id="tab-allMedia" style="display:none;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
+        <h2 style="font-family:'Playfair Display',serif;font-size:26px;">All Media</h2>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <input type="text" id="adminSearch" class="form-control" placeholder="Search…" style="width:200px;" oninput="renderAllTable()" />
+          <select class="form-control" id="adminTypeFilter" style="width:120px;" onchange="renderAllTable()">
+            <option value="">All Types</option><option value="image">Images</option><option value="video">Videos</option>
+          </select>
+        </div>
+      </div>
+      <div class="admin-table-wrap">
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr><th>Thumb</th><th>Title</th><th>Type</th><th>Category</th><th>Stats</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+            <tbody id="allTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- PENDING -->
+    <div id="tab-pending" style="display:none;">
+      <h2 style="font-family:'Playfair Display',serif;font-size:26px;margin-bottom:24px;">Pending Review</h2>
+      <div class="admin-table-wrap">
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr><th>Thumb</th><th>Title</th><th>Type</th><th>Category</th><th>Date</th><th>Actions</th></tr></thead>
+            <tbody id="pendingTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADD MEDIA -->
+    <div id="tab-addMedia" style="display:none;">
+      <h2 style="font-family:'Playfair Display',serif;font-size:26px;margin-bottom:24px;">Add Media</h2>
+      <div class="upload-card" style="max-width:620px;">
+
+        <div class="form-group">
+          <label>Title *</label>
+          <input type="text" class="form-control" id="aTitle" placeholder="Media title" />
+        </div>
+        <div class="form-group">
+          <label>Type *</label>
+          <select class="form-control" id="aType">
+            <option value="image">Image</option><option value="video">Video</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Category *</label>
+          <select class="form-control" id="aCategory">
+            <option value="">— Select —</option>
+            <option>Nature</option><option>Urban</option><option>Adventure</option>
+            <option>Art</option><option>Lifestyle</option><option>Arts</option>
+            <option>Travel</option><option>Technology</option><option>Animals</option><option>Architecture</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Caption / Description</label>
+          <textarea class="form-control" id="aCaption" rows="3" placeholder="Optional description…" style="resize:vertical;"></textarea>
+        </div>
+        <div class="form-group">
+          <label>File</label>
+          <div class="dropzone" style="padding:24px;" onclick="document.getElementById('aFile').click()">
+            <div style="font-size:28px;">📁</div>
+            <p style="margin-top:8px;"><span style="color:var(--accent);">Click to upload</span> or drag file here</p>
+            <p id="aFileName" style="font-size:12px;color:var(--accent);margin-top:6px;"></p>
+          </div>
+          <input type="file" id="aFile" accept="image/*,video/*" style="display:none;" onchange="handleAdminFile(this)" />
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select class="form-control" id="aStatus">
+            <option value="active">Active (Published)</option>
+            <option value="pending">Pending (Review)</option>
+          </select>
+        </div>
+        <p id="addErr" style="color:var(--danger);font-size:13px;margin-bottom:10px;display:none;"></p>
+        <button class="btn-upload" onclick="doAddMedia()">➕ Add to Library</button>
+      </div>
+    </div>
+
+  </div><!-- /admin-content -->
+</div><!-- /admin-layout -->
+</div><!-- /adminPanel -->
+
+<!-- Edit Modal -->
+<div id="editModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:300;align-items:center;justify-content:center;">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:32px;width:460px;max-width:90vw;">
+    <h3 style="font-family:'Playfair Display',serif;font-size:20px;margin-bottom:20px;">Edit Media</h3>
+    <input type="hidden" id="editId" />
+    <div class="form-group"><label>Title</label><input type="text" class="form-control" id="editTitle" /></div>
+    <div class="form-group"><label>Category</label>
+      <select class="form-control" id="editCategory">
+        <option>Nature</option><option>Urban</option><option>Adventure</option>
+        <option>Art</option><option>Lifestyle</option><option>Arts</option>
+        <option>Travel</option><option>Technology</option><option>Animals</option><option>Architecture</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Caption</label><textarea class="form-control" id="editCaption" rows="3" style="resize:vertical;"></textarea></div>
+    <div class="form-group"><label>Status</label>
+      <select class="form-control" id="editStatus">
+        <option value="active">Active</option><option value="pending">Pending</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button onclick="closeEdit()" style="padding:10px 20px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);cursor:pointer;">Cancel</button>
+      <button onclick="saveEdit()" style="padding:10px 20px;background:var(--accent);border:none;border-radius:8px;color:#000;font-weight:600;cursor:pointer;">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="app.js"></script>
+<script>
+const ADMIN_PW = 'admin@123';
+
+function doLogin() {
+  const pw = document.getElementById('pwInput').value;
+  if (pw === ADMIN_PW) {
+    document.getElementById('loginGate').style.display = 'none';
+    document.getElementById('adminPanel').style.display = 'block';
+    renderDashboard();
+  } else {
+    document.getElementById('loginErr').style.display = 'block';
+  }
+}
+
+function doLogout() {
+  document.getElementById('loginGate').style.display = 'flex';
+  document.getElementById('adminPanel').style.display = 'none';
+  document.getElementById('pwInput').value = '';
+}
+
+function switchTab(name, btn) {
+  ['dashboard','allMedia','pending','addMedia'].forEach(t => {
+    document.getElementById('tab-' + t).style.display = 'none';
+  });
+  document.getElementById('tab-' + name).style.display = 'block';
+  document.querySelectorAll('.admin-nav-item').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  if (name === 'dashboard') renderDashboard();
+  if (name === 'allMedia') renderAllTable();
+  if (name === 'pending') renderPendingTable();
+}
+
+function renderDashboard() {
+  const { media } = getData();
+  const total = media.length;
+  const active = media.filter(m => m.status === 'active').length;
+  const pending = media.filter(m => m.status === 'pending').length;
+  const totalDownloads = media.reduce((s, m) => s + (m.downloads || 0), 0);
+  const totalLikes = media.reduce((s, m) => s + (m.likes || 0), 0);
+
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Total Media</div><div class="stat-value stat-accent">${total}</div></div>
+    <div class="stat-card"><div class="stat-label">Published</div><div class="stat-value" style="color:var(--accent2)">${active}</div></div>
+    <div class="stat-card"><div class="stat-label">Pending</div><div class="stat-value" style="color:var(--warn)">${pending}</div></div>
+    <div class="stat-card"><div class="stat-label">Total Downloads</div><div class="stat-value">${totalDownloads}</div></div>
+    <div class="stat-card"><div class="stat-label">Total Likes</div><div class="stat-value">${totalLikes}</div></div>
+  `;
+
+  const recent = [...media].sort((a, b) => b.id - a.id).slice(0, 5);
+  document.getElementById('recentTbody').innerHTML = renderRows(recent, false);
+}
+
+function renderAllTable() {
+  const q = document.getElementById('adminSearch')?.value.toLowerCase() || '';
+  const tf = document.getElementById('adminTypeFilter')?.value || '';
+  let { media } = getData();
+  if (q) media = media.filter(m => m.title.toLowerCase().includes(q) || m.category.toLowerCase().includes(q));
+  if (tf) media = media.filter(m => m.type === tf);
+  document.getElementById('allTbody').innerHTML = renderRows([...media].sort((a,b)=>b.id-a.id), true);
+}
+
+function renderPendingTable() {
+  const pending = getData().media.filter(m => m.status === 'pending');
+  document.getElementById('pendingTbody').innerHTML = renderRows(pending, false, true);
+}
+
+function renderRows(items, showStats = false, isPending = false) {
+  if (!items.length) return `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:32px;">No items found.</td></tr>`;
+  return items.map(item => `
+    <tr>
+      <td>
+        <div class="td-thumb">
+          ${item.src ? (item.type === 'video' ? `<video src="${item.src}" style="width:100%;height:100%;object-fit:cover;"></video>` : `<img src="${item.src}" style="width:100%;height:100%;object-fit:cover;">`) : `<span style="font-size:20px;">${item.type==='video'?'🎬':'🖼️'}</span>`}
+        </div>
+      </td>
+      <td style="max-width:200px;"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.title}</div></td>
+      <td><span class="badge" style="background:rgba(0,153,255,.12);color:var(--accent2);">${item.type}</span></td>
+      <td>${item.category}</td>
+      ${showStats ? `<td style="font-size:12px;color:var(--muted);">❤️${item.likes} ⬇${item.downloads}</td>` : ''}
+      ${isPending ? '' : `<td><span class="badge badge-${item.status}">${item.status}</span></td>`}
+      <td style="font-size:12px;color:var(--muted);">${formatDate(item.date)}</td>
+      <td>
+        ${isPending ? `
+          <button class="tbl-action" onclick="approveItem(${item.id})" style="color:var(--accent);border-color:var(--accent);">✓ Approve</button>
+          <button class="tbl-action del" onclick="confirmDelete(${item.id})">✕ Reject</button>
+        ` : `
+          <button class="tbl-action" onclick="openEdit(${item.id})">✏️ Edit</button>
+          <button class="tbl-action del" onclick="confirmDelete(${item.id})">🗑️ Delete</button>
+        `}
+        <a href="view.html?id=${item.id}" target="_blank" style="font-size:12px;color:var(--muted);margin-left:4px;">View</a>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function approveItem(id) {
+  updateMedia(id, { status: 'active' });
+  showToast('✅ Media approved and published!');
+  renderPendingTable();
+  renderDashboard();
+}
+
+function confirmDelete(id) {
+  if (confirm('Delete this media item permanently?')) {
+    deleteMedia(id);
+    showToast('🗑️ Media deleted.');
+    renderDashboard(); renderAllTable(); renderPendingTable();
+  }
+}
+
+function openEdit(id) {
+  const item = getMediaById(id);
+  if (!item) return;
+  document.getElementById('editId').value = id;
+  document.getElementById('editTitle').value = item.title;
+  document.getElementById('editCategory').value = item.category;
+  document.getElementById('editCaption').value = item.caption;
+  document.getElementById('editStatus').value = item.status;
+  document.getElementById('editModal').style.display = 'flex';
+}
+
+function closeEdit() { document.getElementById('editModal').style.display = 'none'; }
+
+function saveEdit() {
+  const id = document.getElementById('editId').value;
+  updateMedia(id, {
+    title: document.getElementById('editTitle').value,
+    category: document.getElementById('editCategory').value,
+    caption: document.getElementById('editCaption').value,
+    status: document.getElementById('editStatus').value,
+  });
+  closeEdit();
+  showToast('✅ Changes saved!');
+  renderDashboard(); renderAllTable();
+}
+
+// Add media
+let adminFileSrc = '';
+let adminFileType = '';
+
+document.getElementById('aFile')?.addEventListener('change', function() {});
+function handleAdminFile(input) {
+  if (!input.files[0]) return;
+  const file = input.files[0];
+  adminFileType = file.type.startsWith('video') ? 'video' : 'image';
+  const reader = new FileReader();
+  reader.onload = e => {
+    adminFileSrc = e.target.result;
+    document.getElementById('aFileName').textContent = file.name;
+    document.getElementById('aType').value = adminFileType;
+  };
+  reader.readAsDataURL(file);
+}
+
+function doAddMedia() {
+  const title = document.getElementById('aTitle').value.trim();
+  const type = document.getElementById('aType').value;
+  const category = document.getElementById('aCategory').value;
+  const caption = document.getElementById('aCaption').value.trim();
+  const status = document.getElementById('aStatus').value;
+  const errEl = document.getElementById('addErr');
+
+  if (!title) { errEl.textContent = 'Title is required.'; errEl.style.display = 'block'; return; }
+  if (!category) { errEl.textContent = 'Category is required.'; errEl.style.display = 'block'; return; }
+  errEl.style.display = 'none';
+
+  addMedia({ title, type, category, caption, src: adminFileSrc, thumb: adminFileSrc, status });
+  showToast('✅ Media added successfully!');
+
+  // Reset
+  document.getElementById('aTitle').value = '';
+  document.getElementById('aCaption').value = '';
+  document.getElementById('aCategory').value = '';
+  document.getElementById('aFileName').textContent = '';
+  adminFileSrc = ''; adminFileType = '';
+
+  switchTab('allMedia', document.querySelector('[onclick*=allMedia]'));
+}
+
+// Close modal on outside click
+document.getElementById('editModal').addEventListener('click', function(e) {
+  if (e.target === this) closeEdit();
+});
+</script>
+</body>
+</html>

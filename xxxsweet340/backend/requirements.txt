@@ -1,0 +1,6 @@
+Flask>=2.0
+pymongo>=4.0
+python-dotenv>=0.20
+PyJWT>=2.0
+flask-cors>=3.0
+Werkzeug>=2.0

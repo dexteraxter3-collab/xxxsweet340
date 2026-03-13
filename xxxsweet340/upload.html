@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Upload Media – XXXSweet340</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <a href="index.html" class="logo">
+      <div class="logo-icon">
+        <img src="src/logo.jpg" alt="">
+      </div>
+      <span class="logo-text">XXXSweet340</span>
+    </a>
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="Search…" />
+      <button onclick="window.location.href='index.html?search='+document.getElementById('searchInput').value">🔍</button>
+    </div>
+    <div class="header-actions">
+      <button class="btn-menu" id="btnMenu">☰ Menu</button>
+    </div>
+  </div>
+</header>
+
+<div class="menu-overlay" id="menuOverlay"></div>
+<nav class="side-menu" id="sideMenu">
+  <div class="side-menu-header"><h3>Browse</h3><button class="btn-close" id="btnClose">✕</button></div>
+  <div class="menu-section">
+    <div class="menu-section-title">Quick Links</div>
+    <a href="index.html" class="menu-item"><span class="menu-icon">🏠</span> Home</a>
+    <a href="upload.html" class="menu-item"><span class="menu-icon">⬆️</span> Upload</a>
+    <a href="contact.html" class="menu-item"><span class="menu-icon">✉️</span> Contact</a>
+    <a href="admin.html" class="menu-item"><span class="menu-icon">🔧</span> Admin</a>
+  </div>
+  <div class="menu-search">
+    <input type="text" id="menuSearchInput" placeholder="Search…" />
+    <div class="menu-search-actions">
+      <button class="btn-sm btn-primary" id="menuSearchBtn">Search</button>
+      <button class="btn-sm btn-secondary">Clear</button>
+    </div>
+  </div>
+</nav>
+
+<div class="upload-page">
+
+  <div style="margin-bottom:28px;">
+    <h1 style="font-family:'Playfair Display',serif;font-size:32px;font-weight:900;margin-bottom:8px;">Upload Media</h1>
+    <p style="color:var(--muted);font-size:15px;">Share your photos and videos with the XXXSweet340 community.</p>
+  </div>
+
+  <div class="upload-card">
+    <h2>New Upload</h2>
+
+    <!-- Dropzone -->
+    <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
+      <div class="dz-icon" id="dzIcon">📁</div>
+      <p><span>Click to choose</span> or drag & drop your file here</p>
+      <p style="font-size:12px;margin-top:6px;">Supports: JPG, PNG, GIF, MP4, MOV, WEBM (max 100MB)</p>
+      <p id="dzFileName" style="font-size:13px;color:var(--accent);margin-top:8px;display:none;"></p>
+    </div>
+    <input type="file" id="fileInput" accept="image/*,video/*" style="display:none;" onchange="handleFile(this)" />
+
+    <!-- Preview -->
+    <div id="previewWrap" style="display:none;margin-top:16px;border-radius:10px;overflow:hidden;max-height:300px;background:#000;display:flex;align-items:center;justify-content:center;">
+      <img id="previewImg" style="max-width:100%;max-height:300px;display:none;" />
+      <video id="previewVid" controls style="max-width:100%;max-height:300px;display:none;"></video>
+    </div>
+
+    <div style="height:24px;"></div>
+
+    <div class="form-group">
+      <label>Title *</label>
+      <input type="text" class="form-control" id="fieldTitle" placeholder="Give your media a descriptive title" maxlength="100" />
+    </div>
+
+    <div class="form-group">
+      <label>Category *</label>
+      <select class="form-control" id="fieldCategory">
+        <option value="">— Select category —</option>
+        <option>Amateur</option>
+        <option>Urban</option>
+        <option>Adventure</option>
+        <option>Art</option>
+        <option>Lifestyle</option>
+        <option>Arts</option>
+        <option>Travel</option>
+        <option>Technology</option>
+        <option>Animals</option>
+        <option>Architecture</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Description / Caption</label>
+      <textarea class="form-control" id="fieldCaption" rows="3" placeholder="Describe your media (optional)…" style="resize:vertical;"></textarea>
+    </div>
+
+    <div id="uploadError" style="color:var(--danger);font-size:13px;margin-bottom:12px;display:none;"></div>
+
+    <button class="btn-upload" onclick="handleUpload()">⬆️ Submit Upload</button>
+
+    <p style="font-size:12px;color:var(--muted);margin-top:12px;text-align:center;">
+      Uploads are reviewed before being published. Please ensure your content follows our <a href="#" style="color:var(--accent);">community guidelines</a>.
+    </p>
+  </div>
+
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">XXXSweet340</div>
+    <div class="footer-links">
+      <a href="index.html">Home</a><a href="contact.html">Contact</a><a href="admin.html">Admin</a>
+    </div>
+    <p class="footer-copy">© 2026 XXXSweet340. All rights reserved.</p>
+  </div>
+</footer>
+
+<div id="toast" class="toast"></div>
+
+<script src="app.js"></script>
+<script>
+let uploadedFileSrc = '';
+let uploadedType = '';
+
+const dropzone = document.getElementById('dropzone');
+dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('dragover'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+dropzone.addEventListener('drop', e => {
+  e.preventDefault(); dropzone.classList.remove('dragover');
+  if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
+});
+
+function handleFile(input) {
+  if (input.files[0]) loadFile(input.files[0]);
+}
+
+function loadFile(file) {
+  const maxMB = 100;
+  if (file.size > maxMB * 1024 * 1024) { showErr('File too large (max 100MB).'); return; }
+  uploadedType = file.type.startsWith('video') ? 'video' : 'image';
+  const reader = new FileReader();
+  reader.onload = e => {
+    uploadedFileSrc = e.target.result;
+    document.getElementById('dzIcon').textContent = uploadedType === 'video' ? '🎬' : '🖼️';
+    document.getElementById('dzFileName').textContent = file.name;
+    document.getElementById('dzFileName').style.display = 'block';
+    const pw = document.getElementById('previewWrap');
+    pw.style.display = 'flex';
+    if (uploadedType === 'video') {
+      document.getElementById('previewImg').style.display = 'none';
+      const v = document.getElementById('previewVid');
+      v.src = uploadedFileSrc; v.style.display = 'block';
+    } else {
+      document.getElementById('previewVid').style.display = 'none';
+      const i = document.getElementById('previewImg');
+      i.src = uploadedFileSrc; i.style.display = 'block';
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+function showErr(msg) {
+  const el = document.getElementById('uploadError');
+  el.textContent = msg; el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 4000);
+}
+
+function handleUpload() {
+  const title = document.getElementById('fieldTitle').value.trim();
+  const category = document.getElementById('fieldCategory').value;
+  const caption = document.getElementById('fieldCaption').value.trim();
+
+  if (!title) { showErr('Please enter a title.'); return; }
+  if (!category) { showErr('Please select a category.'); return; }
+  if (!uploadedFileSrc) { showErr('Please choose a file to upload.'); return; }
+
+  const item = addMedia({ title, category, caption, src: uploadedFileSrc, type: uploadedType, thumb: uploadedFileSrc });
+
+  showToast('✅ Upload submitted for review!');
+  setTimeout(() => window.location.href = `view.html?id=${item.id}`, 1500);
+}
+
+initMenu();
+</script>
+</body>
+</html>

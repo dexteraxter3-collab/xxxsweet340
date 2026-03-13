@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>XXXSweet340.com– Share & Discover Media</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<header>
+  <div class="header-inner">
+    <a href="index.html" class="logo">
+      <div class="logo-icon">
+        <img src="src/logo.jpg" alt="">
+      </div>
+      <span class="logo-text">XXXSweet340.com</span>
+    </a>
+
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="Search videos, images, categories…" />
+      <button onclick="doSearch()">🔍</button>
+    </div>
+
+    <div class="header-actions">
+      <a href="upload.html" style="background:var(--accent);color:#000;padding:9px 18px;border-radius:8px;font-size:14px;font-weight:600;">+ Upload</a>
+      <button class="btn-menu" id="btnMenu">☰ Menu</button>
+    </div>
+  </div>
+</header>
+
+<!-- ── MENU OVERLAY ── -->
+<div class="menu-overlay" id="menuOverlay"></div>
+<nav class="side-menu" id="sideMenu">
+  <div class="side-menu-header">
+    <h3>Browse</h3>
+    <button class="btn-close" id="btnClose">X</button>
+  </div>
+
+  <div class="menu-section">
+    <div class="menu-section-title">🎬 Videos</div>
+    <button class="menu-item" data-cat="Nature">     <span class="menu-icon"></span> Amateur</button>
+    <button class="menu-item" data-cat="Urban">      <span class="menu-icon"></span> Shemale</button>
+    <button class="menu-item" data-cat="Adventure">  <span class="menu-icon"></span> Hardcore</button>
+    <button class="menu-item" data-cat="Arts">       <span class="menu-icon"></span> Lingaire</button>
+    <button class="menu-item" data-cat="Technology"> <span class="menu-icon"></span> Lesbians</button>
+    <button class="menu-item" data-cat="Travel">     <span class="menu-icon"></span> Pornstars</button>
+  </div>
+
+  <div class="menu-section">
+    <div class="menu-section-title">🖼️ Photos</div>
+    <button class="menu-item" data-cat="Nature">      <span class="menu-icon"></span> Amateur</button>
+    <button class="menu-item" data-cat="Architecture"><span class="menu-icon"></span> Shemale</button>
+    <button class="menu-item" data-cat="Animals">     <span class="menu-icon"></span> Hardcore</button>
+    <button class="menu-item" data-cat="Art">         <span class="menu-icon"></span> Lesbians</button>
+    <button class="menu-item" data-cat="Lifestyle">   <span class="menu-icon"></span> Lingaire</button>
+  </div>
+
+  <div class="menu-section">
+    <div class="menu-section-title">Quick Links</div>
+    <a href="upload.html" class="menu-item"><span class="menu-icon">⬆️</span> Upload Media</a>
+    <a href="contact.html" class="menu-item"><span class="menu-icon">✉️</span> Contact Us</a>
+    <a href="admin.html" class="menu-item"><span class="menu-icon">🔧</span> Admin Panel</a>
+  </div>
+
+  <div class="menu-search">
+    <input type="text" id="menuSearchInput" placeholder="Search…" />
+    <div class="menu-search-actions">
+      <button class="btn-sm btn-primary" id="menuSearchBtn">Search</button>
+      <button class="btn-sm btn-secondary" onclick="document.getElementById('menuSearchInput').value=''">Clear</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ── MAIN ── -->
+<main class="main-container">
+
+  <!-- Filter bar -->
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:24px;">
+    <span style="font-size:13px;color:var(--muted);">Filter:</span>
+    <button class="filter-btn active" data-filter="">All</button>
+    <button class="filter-btn" data-filter="video">Videos</button>
+    <button class="filter-btn" data-filter="image">Photos</button>
+    <div style="margin-left:auto;font-size:13px;color:var(--muted);" id="resultCount"></div>
+  </div>
+
+  <!-- Ads banner -->
+  <div class="ad-banner">📢 Advertisement Space</div>
+
+  <!-- Section title -->
+  <div class="section-header">
+    <h2 class="section-title" id="sectionTitle">Latest Media</h2>
+  </div>
+
+  <!-- Grid -->
+  <div class="media-grid" id="mediaGrid">
+    <div class="empty-state"><div class="es-icon">⏳</div><p>Loading…</p></div>
+  </div>
+
+  <!-- Ads mid -->
+  <div class="ad-banner">📢 Advertisement Space</div>
+
+  <!-- Pagination -->
+  <div class="pagination" id="pagination"></div>
+
+</main>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">XXXSweet340.com</div>
+    <div class="footer-links">
+      <a href="index.html">Home</a>
+      <a href="upload.html">Upload</a>
+      <a href="contact.html">Contact</a>
+      <a href="admin.html">Admin</a>
+      <a href="#">Privacy Policy</a>
+      <a href="#">Terms of Use</a>
+    </div>
+    <p class="footer-copy">© 2026 XXXSweet340.com. All rights reserved.</p>
+  </div>
+</footer>
+
+<div id="toast" class="toast"></div>
+
+<script src="app.js"></script>
+<script>
+const PER_PAGE = 6;
+let currentPage = 1;
+let currentFilter = {};
+
+function getUrlParams() {
+  const p = new URLSearchParams(location.search);
+  return { search: p.get('search') || '', category: p.get('category') || '', type: p.get('type') || '' };
+}
+
+function renderGrid() {
+  const params = getUrlParams();
+  const activeFilter = document.querySelector('.filter-btn.active')?.dataset.filter || '';
+  const filter = { ...params, type: activeFilter || params.type };
+  if (filter.search) filter.search = filter.search;
+
+  const allMedia = getAllMedia(filter);
+  const total = allMedia.length;
+  const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
+  if (currentPage > totalPages) currentPage = 1;
+
+  const slice = allMedia.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);
+
+  const grid = document.getElementById('mediaGrid');
+  document.getElementById('resultCount').textContent = `${total} item${total !== 1 ? 's' : ''}`;
+
+  if (params.search) document.getElementById('sectionTitle').textContent = `Results for "${params.search}"`;
+  else if (params.category) document.getElementById('sectionTitle').textContent = params.category;
+  else if (activeFilter === 'video') document.getElementById('sectionTitle').textContent = 'Videos';
+  else if (activeFilter === 'image') document.getElementById('sectionTitle').textContent = 'Photos';
+  else document.getElementById('sectionTitle').textContent = 'Latest Media';
+
+  if (!slice.length) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="es-icon">🔍</div><p>No media found.</p></div>`;
+  } else {
+    grid.innerHTML = slice.map(item => `
+      <div class="media-card" onclick="window.location.href='view.html?id=${item.id}'">
+        <div class="media-thumb">
+          ${renderThumb(item)}
+          <span class="media-type-badge badge-${item.type}">${item.type === 'video' ? '▶ Video' : '🖼 Photo'}</span>
+        </div>
+        <div class="media-info">
+          <div class="media-title">${item.title}</div>
+          <div class="media-meta">
+            <span class="media-category">${item.category}</span>
+            <span>❤️ ${item.likes} · ⬇ ${item.downloads}</span>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  renderPagination(totalPages);
+}
+
+function renderPagination(total) {
+  const pg = document.getElementById('pagination');
+  if (total <= 1) { pg.innerHTML = ''; return; }
+  let html = '';
+  for (let i = 1; i <= Math.min(total, 5); i++) {
+    html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="goPage(${i})">${i}</button>`;
+  }
+  if (total > 5) html += `<button class="page-btn" onclick="goPage(${currentPage < total ? currentPage + 1 : total})">»</button>`;
+  pg.innerHTML = html;
+}
+
+function goPage(n) { currentPage = n; renderGrid(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+
+function doSearch() {
+  const q = document.getElementById('searchInput').value.trim();
+  if (q) window.location.href = `index.html?search=${encodeURIComponent(q)}`;
+}
+
+document.getElementById('searchInput').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', function () {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    currentPage = 1;
+    renderGrid();
+  });
+});
+
+// pre-fill search if in URL
+const { search } = getUrlParams();
+if (search) document.getElementById('searchInput').value = search;
+
+initMenu();
+renderGrid();
+</script>
+
+<style>
+.filter-btn {
+  padding: 7px 16px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 13px;
+  font-family: 'DM Sans', sans-serif;
+  transition: all .2s;
+}
+.filter-btn:hover, .filter-btn.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(0,212,170,.08);
+}
+</style>
+</body>
+</html>

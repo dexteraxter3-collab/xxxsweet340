@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>View Media – XXXSweet340</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<header>
+  <div class="header-inner">
+    <a href="index.html" class="logo">
+      <div class="logo-icon">
+        <img src="src/logo.jpg" alt="">
+      </div>
+      <span class="logo-text">XXXSweet340.com</span>
+    </a>
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="Search…" />
+      <button onclick="doSearch()">🔍</button>
+    </div>
+    <div class="header-actions">
+      <a href="upload.html" style="background:var(--accent);color:#000;padding:9px 18px;border-radius:8px;font-size:14px;font-weight:600;">+ Upload</a>
+      <button class="btn-menu" id="btnMenu">☰ Menu</button>
+    </div>
+  </div>
+</header>
+
+<!-- Menu (shared) -->
+<div class="menu-overlay" id="menuOverlay"></div>
+<nav class="side-menu" id="sideMenu">
+  <div class="side-menu-header">
+    <h3>Browse</h3>
+    <button class="btn-close" id="btnClose">✕</button>
+  </div>
+  <div class="menu-section">
+    <div class="menu-section-title">🎬 Videos</div>
+    <button class="menu-item" data-cat="Nature"><span class="menu-icon">🌿</span> Nature</button>
+    <button class="menu-item" data-cat="Urban"><span class="menu-icon">🌆</span> Urban</button>
+    <button class="menu-item" data-cat="Adventure"><span class="menu-icon">🏔️</span> Adventure</button>
+    <button class="menu-item" data-cat="Arts"><span class="menu-icon">🎭</span> Arts & Performance</button>
+    <button class="menu-item" data-cat="Technology"><span class="menu-icon">💻</span> Technology</button>
+  </div>
+  <div class="menu-section">
+    <div class="menu-section-title">🖼️ Photos</div>
+    <button class="menu-item" data-cat="Nature"><span class="menu-icon">🌸</span> Nature</button>
+    <button class="menu-item" data-cat="Architecture"><span class="menu-icon">🏛️</span> Architecture</button>
+    <button class="menu-item" data-cat="Animals"><span class="menu-icon">🐾</span> Animals</button>
+    <button class="menu-item" data-cat="Art"><span class="menu-icon">🎨</span> Street Art</button>
+  </div>
+  <div class="menu-section">
+    <div class="menu-section-title">Quick Links</div>
+    <a href="upload.html" class="menu-item"><span class="menu-icon">⬆️</span> Upload</a>
+    <a href="contact.html" class="menu-item"><span class="menu-icon">✉️</span> Contact</a>
+    <a href="admin.html" class="menu-item"><span class="menu-icon">🔧</span> Admin</a>
+  </div>
+  <div class="menu-search">
+    <input type="text" id="menuSearchInput" placeholder="Search…" />
+    <div class="menu-search-actions">
+      <button class="btn-sm btn-primary" id="menuSearchBtn">Search</button>
+      <button class="btn-sm btn-secondary" onclick="document.getElementById('menuSearchInput').value=''">Clear</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ── CONTENT ── -->
+<div class="content-view">
+
+  <!-- Breadcrumb -->
+  <div style="font-size:13px;color:var(--muted);margin-bottom:20px;">
+    <a href="index.html" style="color:var(--accent);">Home</a>
+    <span style="margin:0 8px;">›</span>
+    <span id="breadcrumbCat">Media</span>
+    <span style="margin:0 8px;">›</span>
+    <span id="breadcrumbTitle">Loading…</span>
+  </div>
+
+  <!-- Player -->
+  <div class="content-player" id="contentPlayer">
+    <div class="thumb-placeholder"><span class="ph-icon">⏳</span><span>Loading…</span></div>
+  </div>
+
+  <!-- Actions -->
+  <div class="content-actions" id="contentActions">
+    <!-- rendered by JS -->
+  </div>
+
+  <!-- Caption -->
+  <div class="content-caption" id="contentCaption">Loading media information…</div>
+
+  <!-- Meta info -->
+  <div style="display:flex;gap:24px;font-size:13px;color:var(--muted);margin-bottom:32px;flex-wrap:wrap;" id="contentMeta"></div>
+
+  <!-- Related -->
+  <div class="section-header">
+    <h2 class="section-title">Related Media</h2>
+  </div>
+  <div class="related-grid" id="relatedGrid">
+    <div class="empty-state" style="grid-column:1/-1"><div class="es-icon">⏳</div><p>Loading…</p></div>
+  </div>
+
+  <!-- Ads -->
+  <div class="ad-banner" style="margin-top:32px;">📢 Advertisement Space</div>
+
+</div>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">XXXSweet340</div>
+    <div class="footer-links">
+      <a href="index.html">Home</a>
+      <a href="upload.html">Upload</a>
+      <a href="contact.html">Contact</a>
+      <a href="admin.html">Admin</a>
+    </div>
+    <p class="footer-copy">© 2026 XXXSweet340.com. All rights reserved.</p>
+  </div>
+</footer>
+
+<div id="toast" class="toast"></div>
+
+<script src="app.js"></script>
+<script>
+const params = new URLSearchParams(location.search);
+const id = parseInt(params.get('id'));
+const item = getMediaById(id);
+
+function doSearch() {
+  const q = document.getElementById('searchInput').value.trim();
+  if (q) window.location.href = `index.html?search=${encodeURIComponent(q)}`;
+}
+document.getElementById('searchInput').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+
+if (!item) {
+  document.getElementById('contentPlayer').innerHTML = `<div class="empty-state"><div class="es-icon">❌</div><p>Media not found.</p></div>`;
+} else {
+  // Title
+  document.title = item.title + ' – MediaVault';
+  document.getElementById('breadcrumbCat').textContent = item.category;
+  document.getElementById('breadcrumbTitle').textContent = item.title;
+
+  // Player
+  const player = document.getElementById('contentPlayer');
+  if (item.src) {
+    if (item.type === 'video') {
+      player.innerHTML = `<video src="${item.src}" controls style="width:100%;height:100%;"></video>`;
+    } else {
+      player.innerHTML = `<img src="${item.src}" alt="${item.title}" style="max-height:520px;width:100%;object-fit:contain;">`;
+    }
+  } else {
+    player.innerHTML = `
+      <div class="thumb-placeholder" style="height:100%;">
+        <span style="font-size:72px;">${item.type === 'video' ? '🎬' : '🖼️'}</span>
+        <span style="font-size:18px;font-weight:600;margin-top:8px;">${item.title}</span>
+        <span style="font-size:13px;color:var(--muted);">No media file attached to this demo item</span>
+      </div>`;
+  }
+
+  // Caption
+  document.getElementById('contentCaption').textContent = item.caption;
+
+  // Meta
+  document.getElementById('contentMeta').innerHTML = `
+    <span>📅 ${formatDate(item.date)}</span>
+    <span>📂 ${item.category}</span>
+    <span>❤️ ${item.likes} likes</span>
+    <span>💜 ${item.loves} loves</span>
+    <span>⬇️ ${item.downloads} downloads</span>
+  `;
+
+  // Actions
+  const likedKey = `liked_${id}`;
+  const lovedKey = `loved_${id}`;
+  function renderActions() {
+    const liked = localStorage.getItem(likedKey);
+    const loved = localStorage.getItem(lovedKey);
+    const currentItem = getMediaById(id);
+    document.getElementById('contentActions').innerHTML = `
+      <button class="action-btn download" onclick="handleDownload()">
+        ⬇️ Download
+      </button>
+      <button class="action-btn ${liked ? 'active' : ''}" id="likeBtn" onclick="handleLike()">
+        👍 Like <span id="likeCount">${currentItem.likes}</span>
+      </button>
+      <button class="action-btn ${loved ? 'active' : ''}" id="loveBtn" onclick="handleLove()">
+        ❤️ Love <span id="loveCount">${currentItem.loves}</span>
+      </button>
+      <button class="action-btn" onclick="handleShare()">
+        🔗 Share
+      </button>
+    `;
+  }
+
+  function handleLike() {
+    if (localStorage.getItem(likedKey)) { showToast('Already liked!'); return; }
+    localStorage.setItem(likedKey, '1');
+    const count = incrementLike(id, 'likes');
+    document.getElementById('likeCount').textContent = count;
+    document.getElementById('likeBtn').classList.add('active');
+    showToast('👍 Liked!');
+  }
+
+  function handleLove() {
+    if (localStorage.getItem(lovedKey)) { showToast('Already loved!'); return; }
+    localStorage.setItem(lovedKey, '1');
+    const count = incrementLike(id, 'loves');
+    document.getElementById('loveCount').textContent = count;
+    document.getElementById('loveBtn').classList.add('active');
+    showToast('❤️ Loved!');
+  }
+
+  function handleDownload() {
+    incrementDownload(id);
+    if (item.src) {
+      const a = document.createElement('a');
+      a.href = item.src; a.download = item.title;
+      a.click();
+    }
+    showToast('⬇️ Download started!');
+    // Update count
+    const curr = getMediaById(id);
+    document.getElementById('contentMeta').innerHTML = `
+      <span>📅 ${formatDate(curr.date)}</span>
+      <span>📂 ${curr.category}</span>
+      <span>❤️ ${curr.likes} likes</span>
+      <span>💜 ${curr.loves} loves</span>
+      <span>⬇️ ${curr.downloads} downloads</span>
+    `;
+  }
+
+  function handleShare() {
+    navigator.clipboard.writeText(location.href).then(() => showToast('🔗 Link copied!'));
+  }
+
+  // make these accessible globally
+  window.handleLike = handleLike;
+  window.handleLove = handleLove;
+  window.handleDownload = handleDownload;
+  window.handleShare = handleShare;
+
+  renderActions();
+
+  // Related
+  const related = getAllMedia({ category: item.category }).filter(m => m.id !== item.id).slice(0, 6);
+  const relGrid = document.getElementById('relatedGrid');
+  if (!related.length) {
+    relGrid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="es-icon">🔍</div><p>No related media found.</p></div>`;
+  } else {
+    relGrid.innerHTML = related.map(m => `
+      <div class="media-card" onclick="window.location.href='view.html?id=${m.id}'">
+        <div class="media-thumb">
+          ${renderThumb(m)}
+          <span class="media-type-badge badge-${m.type}">${m.type === 'video' ? '▶' : '🖼'}</span>
+        </div>
+        <div class="media-info">
+          <div class="media-title">${m.title}</div>
+          <div class="media-meta">
+            <span class="media-category">${m.category}</span>
+            <span>❤️ ${m.likes}</span>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+}
+
+initMenu();
+</script>
+</body>
+</html>
